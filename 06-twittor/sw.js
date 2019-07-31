@@ -1,4 +1,4 @@
-importScripts('/js/sw-utils.js')
+importScripts('js/sw-utils.js')
 
 const STATIC_CACHE = "static-v2";
 const DYNAMIC_CACHE = "dynamic-v1";
@@ -6,7 +6,7 @@ const INMUTABLE_CACHE = "inmutable-v1";
 
 //Librerias y recursos hechos por mi que son parte del appshell- core de la app
 const APP_SHELL = [
-  "/",
+  // "/", --> Porque al hostearlo en github este site ya no va  a estar en la raiz
   "index.html",
   "css/style.css",
   "img/favicon.ico",

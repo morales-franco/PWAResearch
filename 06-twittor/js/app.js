@@ -1,7 +1,16 @@
 // Registro Service Worker
+//URL PROD: https://morales-franco.github.io/PWAResearch/06-twittor/
+
+var url = window.location.href;
+var swLocation = '/PWAResearch/06-twittor/sw.js'; //Production
 
 if( navigator.serviceWorker ){
-    navigator.serviceWorker.register('/sw.js');
+
+    if(url.includes("localhost")){
+        swLocation = '/sw.js';
+    }
+
+    navigator.serviceWorker.register(swLocation);
 }
 
 
