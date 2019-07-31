@@ -1,7 +1,7 @@
-importScripts('js/sw-utils.js')
+importScripts("js/sw-utils.js");
 
 const STATIC_CACHE = "static-v2";
-const DYNAMIC_CACHE = "dynamic-v1";
+const DYNAMIC_CACHE = "dynamic-v2";
 const INMUTABLE_CACHE = "inmutable-v1";
 
 //Librerias y recursos hechos por mi que son parte del appshell- core de la app
@@ -46,28 +46,27 @@ self.addEventListener("activate", e => {
       if (key !== STATIC_CACHE && key.includes("static")) {
         return caches.delete(key);
       }
+
+      if (key !== DYNAMIC_CACHE && key.includes("dynamic")) {
+        return caches.delete(key);
+      }
     });
   });
 
   e.waitUntil(clearCachePromise);
 });
 
-self.addEventListener('fetch', e => {
+self.addEventListener("fetch", e => {
+  const response = caches.match(e.request).then(response => {
+    if (response) {
+      return response;
+    }
 
-    const response = caches.match( e.request ).then(response => {
+    //No esta el recurso en cache - Intento recuperarlo del server
+    return fetch(e.request).then(newResponse => {
+      return updateDynamicCache(DYNAMIC_CACHE, e.request, newResponse);
+    });
+  });
 
-        if(response){
-            return response
-        }
-        
-        //No esta el recurso en cache - Intento recuperarlo del server
-        return fetch(e.request).then(newResponse => {
-            return updateDynamicCache( DYNAMIC_CACHE, e.request, newResponse )
-        });
-
-
-    })
-
-    e.respondWith(response);
-
+  e.respondWith(response);
 });
