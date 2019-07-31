@@ -30,7 +30,6 @@ self.addEventListener('install', event =>{
             '/index.html',
             '/css/style.css',
             '/img/main.jpg',
-            '/img/no-img.jpg',
             '/js/app.js'
         ]);
     });
@@ -46,48 +45,26 @@ self.addEventListener('install', event =>{
 });
 
 self.addEventListener('fetch', e => {
-    //5 - Cache & Network Race
+    //4 - Cache with Netwotk  Update
+    //Se requiere: Rendimiento critico
+    //Siempre esta una versión atrás
 
-    const responseNetwork = new Promise((resolve, reject) => {
-
-        let rechazada = false;
-
-        const falloUnaVez = () => {
-
-            if(rechazada){
-                //No existe petición válida ni en cache ni en server
-
-                //usar regular expression! Return default image
-                if(e.request.url.includes("jpg") ||
-                   e.request.url.includes("png")){
-                    resolve ( caches.match( '/img/no-img.jpg' ) );
-                }else
-                {
-                    reject("No se encontro respuesta");
-                }
-
-            }else{
-                rechazada = true;
-            }
-
-        };
-
-
-        fetch( e.request ).then( response => {
-            response.ok ? resolve(response) : falloUnaVez()
-        }).catch(falloUnaVez);
-
-        caches.match(e.request).then(response => {
-            response ? resolve(response): falloUnaVez()
-        }).catch(falloUnaVez);
-
-
-    });
+    if(e.request.url.includes("bootstrap")){
+        return e.respondWith(caches.match(e.request));
+    }
     
+    const responseNetwork = caches.open( CACHE_STATIC_NAME ).then( cache =>  {
 
-   
+        fetch(e.request).then( newResponse => {
+            //Actualizamos la ultima versión del Recurso
+            //Pero es async!
+            cache.put(e.request, newResponse);
 
+        })
 
+        //Devolvemos versión anterior
+        return cache.match(e.request);
+    });
     
 
     e.respondWith(responseNetwork);

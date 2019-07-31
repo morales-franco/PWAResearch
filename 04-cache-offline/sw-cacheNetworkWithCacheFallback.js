@@ -30,7 +30,6 @@ self.addEventListener('install', event =>{
             '/index.html',
             '/css/style.css',
             '/img/main.jpg',
-            '/img/no-img.jpg',
             '/js/app.js'
         ]);
     });
@@ -46,49 +45,29 @@ self.addEventListener('install', event =>{
 });
 
 self.addEventListener('fetch', e => {
-    //5 - Cache & Network Race
+    //3 - Network with cache fallback
 
-    const responseNetwork = new Promise((resolve, reject) => {
+    //Network first
+    const responseNetwork = fetch( e.request ).then(response => {
 
-        let rechazada = false;
+        //Si la respuesta NO existe - 404
+        if(!response){
+            return caches.match(e.request);
+        }
 
-        const falloUnaVez = () => {
+        console.log('Fetch', response);
+        caches.open( CACHE_DYNAMIC_NAME)
+        .then( cache => {
+            cache.put(e.request, response);
+            cleanCache(CACHE_DYNAMIC_NAME, CACHE_DYNAMIC_LIMIT);
 
-            if(rechazada){
-                //No existe petición válida ni en cache ni en server
+        });
 
-                //usar regular expression! Return default image
-                if(e.request.url.includes("jpg") ||
-                   e.request.url.includes("png")){
-                    resolve ( caches.match( '/img/no-img.jpg' ) );
-                }else
-                {
-                    reject("No se encontro respuesta");
-                }
+        return response.clone();
+    }).catch( error => {
 
-            }else{
-                rechazada = true;
-            }
-
-        };
-
-
-        fetch( e.request ).then( response => {
-            response.ok ? resolve(response) : falloUnaVez()
-        }).catch(falloUnaVez);
-
-        caches.match(e.request).then(response => {
-            response ? resolve(response): falloUnaVez()
-        }).catch(falloUnaVez);
-
-
+        return caches.match(e.request);
     });
-    
-
-   
-
-
-    
 
     e.respondWith(responseNetwork);
 

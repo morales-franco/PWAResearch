@@ -1,7 +1,6 @@
 const CACHE_STATIC_NAME = 'cache-static-v1';
 const CACHE_DYNAMIC_NAME = 'cache-dynamic-v1';
 const CACHE_INMUTABLE_NAME = 'cache-inmutable-v1';
-const CACHE_DYNAMIC_LIMIT = 50;
 
 function cleanCache(cacheName, maxItem){
 
@@ -30,7 +29,6 @@ self.addEventListener('install', event =>{
             '/index.html',
             '/css/style.css',
             '/img/main.jpg',
-            '/img/no-img.jpg',
             '/js/app.js'
         ]);
     });
@@ -46,50 +44,36 @@ self.addEventListener('install', event =>{
 });
 
 self.addEventListener('fetch', e => {
-    //5 - Cache & Network Race
+    //Cache with Network Fallback - with Dynamic caches
+    console.log(e.request.url);
+    const resource = caches.match( e.request )
+    .then( response => {
 
-    const responseNetwork = new Promise((resolve, reject) => {
+        if( response )
+        {
+            return response;
+        }
 
-        let rechazada = false;
+        //File doesn't exist
+        //I need to retrieve resource from the server
 
-        const falloUnaVez = () => {
+        console.log('no existe', e.request.url);
 
-            if(rechazada){
-                //No existe petición válida ni en cache ni en server
+        return fetch( e.request)
+        .then(newResponse =>{
 
-                //usar regular expression! Return default image
-                if(e.request.url.includes("jpg") ||
-                   e.request.url.includes("png")){
-                    resolve ( caches.match( '/img/no-img.jpg' ) );
-                }else
-                {
-                    reject("No se encontro respuesta");
-                }
+            caches.open(CACHE_DYNAMIC_NAME)
+            .then(cache => {
+                //cacheo el nuevo resource
+                cache.put( e.request,  newResponse);
+                cleanCache(CACHE_DYNAMIC_NAME, 5);
+            });
 
-            }else{
-                rechazada = true;
-            }
-
-        };
-
-
-        fetch( e.request ).then( response => {
-            response.ok ? resolve(response) : falloUnaVez()
-        }).catch(falloUnaVez);
-
-        caches.match(e.request).then(response => {
-            response ? resolve(response): falloUnaVez()
-        }).catch(falloUnaVez);
-
-
+            //no podemos usar el response más de una vez
+            return newResponse.clone();
+        } );
     });
-    
 
-   
-
-
-    
-
-    e.respondWith(responseNetwork);
+    e.respondWith(resource);
 
 });
