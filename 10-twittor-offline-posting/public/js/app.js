@@ -140,6 +140,61 @@ postBtn.on('click', function() {
         return;
     }
 
+    var data = {
+        mensaje: mensaje,
+        user : usuario
+    };
+
+    fetch('http://localhost:3000/api',{
+        method:'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(dataJson => console.log('fetch - createMessage', dataJson))
+    .catch(error => console.log('fetch - Error', error))
+
     crearMensajeHTML( mensaje, usuario );
 
 });
+
+function getMensajes(){
+    fetch('http://localhost:3000/api')
+    .then(response => response.json())
+    .then(posts => {
+        console.log(posts);
+
+        posts.forEach(post => {
+            crearMensajeHTML(post.mensaje, post.user);
+        });
+
+    });
+}
+
+getMensajes();
+
+function isOnline(){
+    if(navigator.onLine){
+        //TENEMOS CONEXIÓN
+        mdtoast('Online', {
+            interaction: true,
+            interactionTimeout: 1000,
+            actionText: 'Ok!'
+        });
+
+    }else{
+        //NO TENEMOS CONEXIÓN
+        mdtoast('Offline', {
+            interaction: true,
+            actionText: 'Ok!',
+            type: 'warning'
+        });
+    }
+
+}
+
+window.addEventListener('online', isOnline);
+window.addEventListener('offline', isOnline);
+isOnline();
